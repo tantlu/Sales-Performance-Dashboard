@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Performance Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --blue-tint: rgba(37, 99, 235, 0.10);
+      --teal: #0891b2;
+      --teal-tint: rgba(8, 145, 178, 0.12);
+      --green: #059669;
+      --green-tint: rgba(5, 150, 105, 0.12);
+      --amber: #d97706;
+      --amber-tint: rgba(217, 119, 6, 0.12);
+      --violet: #7c3aed;
+      --violet-tint: rgba(124, 58, 237, 0.12);
+      --rose: #e11d48;
+      --rose-tint: rgba(225, 29, 72, 0.12);
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --shadow-hover: 0 18px 40px rgba(15, 23, 42, 0.10);
+      --radius: 16px;
+      --grid-gap: 18px;
+      --transition: 240ms cubic-bezier(.2, .8, .2, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      background: rgba(37, 99, 235, 0.08);
+      color: var(--blue);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+
+    .title {
+      margin: 16px 0 8px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .title .accent { color: var(--blue); }
+
+    .subtitle {
+      margin: 0 auto;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .divider {
+      width: 60px;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--teal));
+      margin: 20px auto 0;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background-color var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .upload-wrap {
+      margin-top: 36px;
+    }
+
+    .upload-card {
+      max-width: 760px;
+      margin: 0 auto;
+      border: 2px dashed #bfdbfe;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.94));
+      padding: 34px 28px;
+      text-align: center;
+    }
+
+    .upload-card.dragover,
+    .upload-card:hover {
+      border-color: var(--blue);
+      background: linear-gradient(180deg, rgba(239,246,255,0.95), rgba(255,255,255,0.98));
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.12);
+    }
+
+    .upload-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(8,145,178,0.14));
+      color: var(--blue);
+    }
+
+    .upload-icon svg { width: 34px; height: 34px; }
+
+    .upload-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .upload-desc {
+      margin: 10px auto 22px;
+      max-width: 580px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .button {
+      appearance: none;
+      border: none;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition), background-color var(--transition), color var(--transition), border-color var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .button:hover { transform: translateY(-2px); }
+    .button-primary {
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      color: #fff;
+      box-shadow: 0 14px 26px rgba(37, 99, 235, 0.22);
+    }
+
+    .button-secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .helper-text {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hidden-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .error {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: rgba(225, 29, 72, 0.08);
+      border: 1px solid rgba(225, 29, 72, 0.18);
+      color: var(--rose);
+      border-radius: 12px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .dashboard { display: none; margin-top: 28px; }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .record-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.45);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.45); }
+      70% { box-shadow: 0 0 0 10px rgba(5, 150, 105, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+    }
+
+    .dashboard-grid {
+      display: grid;
+      gap: var(--grid-gap);
+    }
+
+    .kpi-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: var(--grid-gap);
+    }
+
+    .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: var(--grid-gap);
+    }
+
+    .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .kpi-card {
+      padding: 18px 18px 16px 18px;
+      min-height: 132px;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      border-radius: 16px 0 0 16px;
+    }
+
+    .kpi-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .kpi-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .icon-wrap svg { width: 22px; height: 22px; }
+
+    .kpi-value {
+      font-size: clamp(26px, 3vw, 30px);
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin: 0;
+    }
+
+    .kpi-note {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .blue::before { background: var(--blue); }
+    .teal::before { background: var(--teal); }
+    .green::before { background: var(--green); }
+    .amber::before { background: var(--amber); }
+    .blue .icon-wrap { background: var(--blue-tint); color: var(--blue); }
+    .teal .icon-wrap { background: var(--teal-tint); color: var(--teal); }
+    .green .icon-wrap { background: var(--green-tint); color: var(--green); }
+    .amber .icon-wrap { background: var(--amber-tint); color: var(--amber); }
+
+    .panel {
+      padding: 18px;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel.short { min-height: 360px; }
+    .panel-title {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-subtitle {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .chart {
+      width: 100%;
+      height: 100%;
+      min-height: 280px;
+      flex: 1;
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(14px);
+      animation: fadeUp 560ms cubic-bezier(.2,.8,.2,1) forwards;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .dashboard.animate .stagger-1 { animation-delay: 40ms; }
+    .dashboard.animate .stagger-2 { animation-delay: 100ms; }
+    .dashboard.animate .stagger-3 { animation-delay: 160ms; }
+    .dashboard.animate .stagger-4 { animation-delay: 220ms; }
+    .dashboard.animate .stagger-5 { animation-delay: 280ms; }
+    .dashboard.animate .stagger-6 { animation-delay: 340ms; }
+    .dashboard.animate .stagger-7 { animation-delay: 400ms; }
+    .dashboard.animate .stagger-8 { animation-delay: 460ms; }
+    .dashboard.animate .stagger-9 { animation-delay: 520ms; }
+    .dashboard.animate .stagger-10 { animation-delay: 580ms; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .three-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .three-col .panel:last-child { grid-column: span 2; }
+    }
+
+    @media (max-width: 860px) {
+      .two-col, .three-col, .kpi-grid { grid-template-columns: 1fr; }
+      .three-col .panel:last-child { grid-column: auto; }
+      .toolbar { align-items: stretch; }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 22px 14px 40px; }
+      .upload-card { padding: 28px 18px; }
+      .panel, .kpi-card { padding: 16px; }
+      .title { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="eyebrow">Sales Intelligence Dashboard</div>
+      <h1 class="title">Sales <span class="accent">Performance</span> Dashboard</h1>
+      <p class="subtitle">
+        Upload a JSON array of order records to unlock interactive revenue, profit, geography, segment, product, and shipping insights in a polished executive view.
+      </p>
+      <div class="divider" aria-hidden="true"></div>
+    </header>
+
+    <section class="upload-wrap" id="uploadWrap">
+      <div class="card upload-card fade-up stagger-1" id="dropZone">
+        <div class="upload-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <h2 class="upload-title">Upload Your Sales JSON</h2>
+        <p class="upload-desc">
+          Drag & drop a <strong>.json</strong> file here, or browse from your device. Expected fields: <em>Order ID</em>, <em>Order Date</em> (MM/DD/YYYY), <em>Sales</em>, <em>Profit</em>, <em>Quantity</em>, <em>Segment</em>, <em>State</em>, <em>Product Name</em>, and <em>Ship Mode</em>.
+        </p>
+        <button class="button button-primary" id="browseButton" type="button">Choose JSON File</button>
+        <input class="hidden-input" id="fileInput" type="file" accept=".json,application/json" />
+        <div class="helper-text">Tip: the file should contain a top-level JSON array of order objects.</div>
+        <div class="error" id="errorBox"></div>
+      </div>
+    </section>
+
+    <main class="dashboard" id="dashboard">
+      <div class="toolbar fade-up stagger-1">
+        <div class="record-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span id="recordCount">0 records loaded</span>
+        </div>
+        <button class="button button-secondary" id="resetButton" type="button">Reset & Upload New File</button>
+      </div>
+
+      <section class="dashboard-grid kpi-grid">
+        <article class="card kpi-card blue fade-up stagger-2">
+          <div class="kpi-head">
+            <div class="kpi-label">Revenue</div>
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+          </div>
+          <h3 class="kpi-value" id="kpiRevenue">$0</h3>
+          <div class="kpi-note">Total sales generated</div>
+        </article>
+
+        <article class="card kpi-card teal fade-up stagger-3">
+          <div class="kpi-head">
+            <div class="kpi-label">Profit</div>
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                <polyline points="16 7 22 7 22 13"></polyline>
+              </svg>
+            </div>
+          </div>
+          <h3 class="kpi-value" id="kpiProfit">$0</h3>
+          <div class="kpi-note">Net profit across all orders</div>
+        </article>
+
+        <article class="card kpi-card green fade-up stagger-4">
+          <div class="kpi-head">
+            <div class="kpi-label">Units</div>
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+                <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+                <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="16.8"></line>
+                <line x1="12" y1="6.81" x2="12" y2="12"></line>
+              </svg>
+            </div>
+          </div>
+          <h3 class="kpi-value" id="kpiUnits">0</h3>
+          <div class="kpi-note">Quantity of items sold</div>
+        </article>
+
+        <article class="card kpi-card amber fade-up stagger-5">
+          <div class="kpi-head">
+            <div class="kpi-label">AOV</div>
+            <div class="icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+            </div>
+          </div>
+          <h3 class="kpi-value" id="kpiAov">$0</h3>
+          <div class="kpi-note">Average order value</div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-col">
+        <article class="card panel fade-up stagger-6">
+          <h3 class="panel-title">Sales & Profit Trend</h3>
+          <p class="panel-subtitle">Daily performance trend with smoothed spline area lines.</p>
+          <div class="chart" id="trendChart"></div>
+        </article>
+
+        <article class="card panel short fade-up stagger-7">
+          <h3 class="panel-title">Sales by Segment</h3>
+          <p class="panel-subtitle">Revenue contribution by customer segment.</p>
+          <div class="chart" id="segmentChart"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid two-col">
+        <article class="card panel fade-up stagger-8">
+          <h3 class="panel-title">Sales by State</h3>
+          <p class="panel-subtitle">US choropleth highlighting revenue concentration.</p>
+          <div class="chart" id="mapChart"></div>
+        </article>
+
+        <article class="card panel fade-up stagger-9">
+          <h3 class="panel-title">Top 10 Products by Revenue</h3>
+          <p class="panel-subtitle">Best-performing products ranked by total sales.</p>
+          <div class="chart" id="productChart"></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid three-col">
+        <article class="card panel short fade-up stagger-8">
+          <h3 class="panel-title">Ship Mode Profit Share</h3>
+          <p class="panel-subtitle">How profit is distributed across shipping methods.</p>
+          <div class="chart" id="shipProfitChart"></div>
+        </article>
+
+        <article class="card panel short fade-up stagger-9">
+          <h3 class="panel-title">Ship Mode Volume Share</h3>
+          <p class="panel-subtitle">Quantity mix by shipping method.</p>
+          <div class="chart" id="shipVolumeChart"></div>
+        </article>
+
+        <article class="card panel short fade-up stagger-10">
+          <h3 class="panel-title">Ship Mode Order Count</h3>
+          <p class="panel-subtitle">Order distribution across ship modes.</p>
+          <div class="chart" id="shipOrderChart"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STATE_CODES = {
+      'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA', 'colorado': 'CO',
+      'connecticut': 'CT', 'delaware': 'DE', 'district of columbia': 'DC', 'florida': 'FL', 'georgia': 'GA',
+      'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+      'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD', 'massachusetts': 'MA',
+      'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO', 'montana': 'MT',
+      'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM',
+      'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+      'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC', 'south dakota': 'SD',
+      'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA',
+      'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY'
+    };
+
+    const plotConfig = { responsive: true, displayModeBar: false };
+
+    const formatCurrency = (value) => new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }).format(Number.isFinite(value) ? value : 0);
+
+    const formatNumber = (value) => new Intl.NumberFormat('en-US').format(Number.isFinite(value) ? value : 0);
+
+    function parseDateMMDDYYYY(value) {
+      if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+      if (typeof value !== 'string') return null;
+      const parts = value.trim().split('/');
+      if (parts.length !== 3) return null;
+      const [mm, dd, yyyy] = parts.map(Number);
+      if (!mm || !dd || !yyyy) return null;
+      const date = new Date(yyyy, mm - 1, dd);
+      if (
+        date.getFullYear() !== yyyy ||
+        date.getMonth() !== mm - 1 ||
+        date.getDate() !== dd
+      ) return null;
+      return date;
+    }
+
+    function normalizeNumber(value) {
+      if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+      if (typeof value === 'string') {
+        const cleaned = value.replace(/[$,\s]/g, '');
+        const num = Number(cleaned);
+        return Number.isFinite(num) ? num : 0;
+      }
+      return 0;
+    }
+
+    function getField(row, ...keys) {
+      for (const key of keys) {
+        if (Object.prototype.hasOwnProperty.call(row, key)) return row[key];
+      }
+      const lowerMap = Object.keys(row).reduce((acc, k) => {
+        acc[k.toLowerCase()] = row[k];
+        return acc;
+      }, {});
+      for (const key of keys) {
+        const found = lowerMap[String(key).toLowerCase()];
+        if (found !== undefined) return found;
+      }
+      return undefined;
+    }
+
+    function normalizeStateToCode(value) {
+      if (!value) return null;
+      const raw = String(value).trim();
+      if (!raw) return null;
+      if (raw.length === 2) return raw.toUpperCase();
+      const lookup = STATE_CODES[raw.toLowerCase()];
+      return lookup || null;
+    }
+
+    function buildGradientColors(count, start, end) {
+      const hexToRgb = (hex) => {
+        const clean = hex.replace('#', '');
+        const bigint = parseInt(clean, 16);
+        return {
+          r: (bigint >> 16) & 255,
+          g: (bigint >> 8) & 255,
+          b: bigint & 255
+        };
+      };
+      const rgbToHex = ({ r, g, b }) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+      const a = hexToRgb(start);
+      const b = hexToRgb(end);
+      if (count <= 1) return [start];
+      return Array.from({ length: count }, (_, i) => {
+        const t = i / (count - 1);
+        return rgbToHex({
+          r: Math.round(a.r + (b.r - a.r) * t),
+          g: Math.round(a.g + (b.g - a.g) * t),
+          b: Math.round(a.b + (b.b - a.b) * t)
+        });
+      });
+    }
+
+    function safeArray(data) {
+      return Array.isArray(data) ? data : [];
+    }
+
+    function normalizeRows(rows) {
+      return safeArray(rows).map((row, index) => {
+        const orderId = getField(row, 'Order ID', 'order_id', 'order id', 'OrderID') ?? `ROW-${index + 1}`;
+        const orderDateRaw = getField(row, 'Order Date', 'order_date', 'order date', 'OrderDate');
+        const orderDate = parseDateMMDDYYYY(String(orderDateRaw ?? '').trim());
+        const sales = normalizeNumber(getField(row, 'Sales', 'sales'));
+        const profit = normalizeNumber(getField(row, 'Profit', 'profit'));
+        const quantity = normalizeNumber(getField(row, 'Quantity', 'quantity'));
+        const segment = String(getField(row, 'Segment', 'segment') ?? 'Unknown').trim() || 'Unknown';
+        const state = String(getField(row, 'State', 'state') ?? '').trim() || 'Unknown';
+        const productName = String(getField(row, 'Product Name', 'product_name', 'product name', 'ProductName') ?? 'Unknown Product').trim() || 'Unknown Product';
+        const shipMode = String(getField(row, 'Ship Mode', 'ship_mode', 'ship mode', 'ShipMode') ?? 'Unknown').trim() || 'Unknown';
+        return {
+          orderId: String(orderId),
+          orderDate,
+          orderDateLabel: orderDateRaw,
+          sales,
+          profit,
+          quantity,
+          segment,
+          state,
+          stateCode: normalizeStateToCode(state),
+          productName,
+          shipMode,
+          _raw: row
+        };
+      }).filter(row => row.orderDate && row.orderId);
+    }
+
+    function sumBy(rows, keyFn, valueFn) {
+      const map = new Map();
+      rows.forEach(row => {
+        const key = keyFn(row);
+        const current = map.get(key) || 0;
+        map.set(key, current + valueFn(row));
+      });
+      return map;
+    }
+
+    function uniqueCountByGroup(rows, groupKeyFn, uniqueKeyFn) {
+      const groupMap = new Map();
+      rows.forEach(row => {
+        const group = groupKeyFn(row);
+        if (!groupMap.has(group)) groupMap.set(group, new Set());
+        groupMap.get(group).add(uniqueKeyFn(row));
+      });
+      const result = new Map();
+      groupMap.forEach((set, key) => result.set(key, set.size));
+      return result;
+    }
+
+    function getBaseLayout(overrides = {}) {
+      return {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Poppins, sans-serif', color: '#0f172a', size: 12 },
+        margin: { l: 48, r: 18, t: 10, b: 40 },
+        hoverlabel: {
+          bgcolor: '#ffffff',
+          bordercolor: '#e2e8f0',
+          font: { family: 'Poppins, sans-serif', color: '#0f172a' }
+        },
+        xaxis: {
+          showgrid: true,
+          gridcolor: '#e2e8f0',
+          zeroline: false,
+          linecolor: '#e2e8f0',
+          tickfont: { color: '#475569' },
+          titlefont: { color: '#475569' }
+        },
+        yaxis: {
+          showgrid: true,
+          gridcolor: '#e2e8f0',
+          zeroline: false,
+          linecolor: '#e2e8f0',
+          tickfont: { color: '#475569' },
+          titlefont: { color: '#475569' }
+        },
+        legend: {
+          orientation: 'h',
+          x: 0,
+          y: 1.12,
+          bgcolor: 'rgba(0,0,0,0)',
+          font: { family: 'Poppins, sans-serif', size: 12 }
+        },
+        ...overrides
+      };
+    }
+
+    const uploadWrap = document.getElementById('uploadWrap');
+    const dashboard = document.getElementById('dashboard');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const browseButton = document.getElementById('browseButton');
+    const errorBox = document.getElementById('errorBox');
+    const resetButton = document.getElementById('resetButton');
+    const recordCount = document.getElementById('recordCount');
+
+    const kpiRevenue = document.getElementById('kpiRevenue');
+    const kpiProfit = document.getElementById('kpiProfit');
+    const kpiUnits = document.getElementById('kpiUnits');
+    const kpiAov = document.getElementById('kpiAov');
+
+    let currentRows = [];
+
+    browseButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files?.[0];
+      if (file) handleFile(file);
+    });
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'dragend', 'drop'].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('dragover');
+      });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleFile(file);
+    });
+
+    resetButton.addEventListener('click', () => {
+      currentRows = [];
+      fileInput.value = '';
+      dashboard.style.display = 'none';
+      dashboard.classList.remove('animate');
+      uploadWrap.style.display = 'block';
+      hideError();
+      [
+        'trendChart',
+        'segmentChart',
+        'mapChart',
+        'productChart',
+        'shipProfitChart',
+        'shipVolumeChart',
+        'shipOrderChart'
+      ].forEach(id => Plotly.purge(id));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    }
+
+    function hideError() {
+      errorBox.textContent = '';
+      errorBox.style.display = 'none';
+    }
+
+    function handleFile(file) {
+      hideError();
+      if (!/\.json$/i.test(file.name) && file.type !== 'application/json') {
+        showError('Please upload a valid JSON file.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!Array.isArray(parsed)) {
+            throw new Error('The JSON must contain a top-level array of records.');
+          }
+          const rows = normalizeRows(parsed);
+          if (!rows.length) {
+            throw new Error('No valid records were found. Ensure dates use MM/DD/YYYY and all required fields are present.');
+          }
+          currentRows = rows;
+          renderDashboard(rows);
+        } catch (error) {
+          console.error(error);
+          showError(error.message || 'Unable to parse this file. Please verify the JSON structure and field names.');
+        }
+      };
+      reader.onerror = () => showError('We could not read that file. Please try again.');
+      reader.readAsText(file);
+    }
+
+    function renderDashboard(rows) {
+      const totalRevenue = rows.reduce((sum, row) => sum + row.sales, 0);
+      const totalProfit = rows.reduce((sum, row) => sum + row.profit, 0);
+      const totalUnits = rows.reduce((sum, row) => sum + row.quantity, 0);
+      const uniqueOrders = new Set(rows.map(row => row.orderId)).size;
+      const aov = uniqueOrders ? totalRevenue / uniqueOrders : 0;
+
+      kpiRevenue.textContent = formatCurrency(totalRevenue);
+      kpiProfit.textContent = formatCurrency(totalProfit);
+      kpiUnits.textContent = formatNumber(Math.round(totalUnits));
+      kpiAov.textContent = formatCurrency(aov);
+      recordCount.textContent = `${formatNumber(rows.length)} records loaded`;
+
+      renderTrendChart(rows);
+      renderSegmentChart(rows);
+      renderMapChart(rows);
+      renderProductChart(rows);
+      renderShipModeCharts(rows);
+
+      uploadWrap.style.display = 'none';
+      dashboard.style.display = 'block';
+      dashboard.classList.remove('animate');
+      void dashboard.offsetWidth;
+      dashboard.classList.add('animate');
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 700);
+    }
+
+    function renderTrendChart(rows) {
+      const grouped = new Map();
+      rows.forEach(row => {
+        const key = row.orderDate.toISOString().slice(0, 10);
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            date: row.orderDate,
+            sales: 0,
+            profit: 0
+          });
+        }
+        const entry = grouped.get(key);
+        entry.sales += row.sales;
+        entry.profit += row.profit;
+      });
+      const points = Array.from(grouped.values()).sort((a, b) => a.date - b.date);
+      const x = points.map(d => d.date);
+      const salesY = points.map(d => d.sales);
+      const profitY = points.map(d => d.profit);
+
+      const data = [
+        {
+          type: 'scatter',
+          mode: 'lines',
+          x,
+          y: salesY,
+          name: 'Sales',
+          line: { color: '#2563eb', width: 3, shape: 'spline', smoothing: 1.15 },
+          fill: 'tozeroy',
+          fillcolor: 'rgba(37, 99, 235, 0.12)',
+          hovertemplate: '<b>%{x|%b %d, %Y}</b><br>Sales: %{y:$,.0f}<extra></extra>'
+        },
+        {
+          type: 'scatter',
+          mode: 'lines',
+          x,
+          y: profitY,
+          name: 'Profit',
+          line: { color: '#059669', width: 3, shape: 'spline', smoothing: 1.15 },
+          fill: 'tozeroy',
+          fillcolor: 'rgba(5, 150, 105, 0.10)',
+          hovertemplate: '<b>%{x|%b %d, %Y}</b><br>Profit: %{y:$,.0f}<extra></extra>'
+        }
+      ];
+
+      const layout = getBaseLayout({
+        margin: { l: 56, r: 18, t: 18, b: 40 },
+        xaxis: {
+          type: 'date',
+          showgrid: true,
+          gridcolor: '#e2e8f0',
+          zeroline: false,
+          tickfont: { color: '#475569' }
+        },
+        yaxis: {
+          showgrid: true,
+          gridcolor: '#e2e8f0',
+          zeroline: false,
+          tickprefix: '$',
+          separatethousands: true,
+          tickfont: { color: '#475569' }
+        }
+      });
+      Plotly.newPlot('trendChart', data, layout, plotConfig);
+    }
+
+    function renderSegmentChart(rows) {
+      const grouped = sumBy(rows, row => row.segment, row => row.sales);
+      const entries = Array.from(grouped.entries()).sort((a, b) => b[1] - a[1]);
+      const labels = entries.map(([key]) => key);
+      const values = entries.map(([, value]) => value);
+      const palette = ['#2563eb', '#0891b2', '#7c3aed', '#d97706', '#059669', '#e11d48'];
+
+      const data = [{
+        type: 'pie',
+        labels,
+        values,
+        hole: 0.58,
+        sort: false,
+        marker: {
+          colors: palette.slice(0, labels.length),
+          line: { color: '#ffffff', width: 2 }
+        },
+        textinfo: 'percent+label',
+        textposition: 'outside',
+        hovertemplate: '<b>%{label}</b><br>Sales: %{value:$,.0f}<br>Share: %{percent}<extra></extra>',
+        automargin: true
+      }];
+
+      const layout = getBaseLayout({
+        showlegend: false,
+        margin: { l: 10, r: 10, t: 10, b: 10 }
+      });
+      Plotly.newPlot('segmentChart', data, layout, plotConfig);
+    }
+
+    function renderMapChart(rows) {
+      const validRows = rows.filter(row => row.stateCode);
+      const grouped = sumBy(validRows, row => row.stateCode, row => row.sales);
+      const entries = Array.from(grouped.entries()).sort((a, b) => b[1] - a[1]);
+      const locations = entries.map(([state]) => state);
+      const z = entries.map(([, value]) => value);
+
+      const data = [{
+        type: 'choropleth',
+        locationmode: 'USA-states',
+        locations,
+        z,
+        colorscale: [
+          [0, '#dbeafe'],
+          [0.35, '#93c5fd'],
+          [0.7, '#3b82f6'],
+          [1, '#1d4ed8']
+        ],
+        marker: { line: { color: '#ffffff', width: 1 } },
+        colorbar: {
+          title: 'Sales',
+          thickness: 10,
+          outlinewidth: 0,
+          tickprefix: '$'
+        },
+        hovertemplate: '<b>%{location}</b><br>Sales: %{z:$,.0f}<extra></extra>'
+      }];
+
+      const layout = getBaseLayout({
+        geo: {
+          scope: 'usa',
+          bgcolor: 'rgba(0,0,0,0)',
+          showlakes: false,
+          showland: true,
+          landcolor: 'rgba(148, 163, 184, 0.08)',
+          subunitcolor: '#ffffff'
+        },
+        margin: { l: 0, r: 0, t: 0, b: 0 }
+      });
+
+      Plotly.newPlot('mapChart', data, layout, plotConfig);
+    }
+
+    function renderProductChart(rows) {
+      const grouped = sumBy(rows, row => row.productName, row => row.sales);
+      const top10 = Array.from(grouped.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .reverse();
+      const y = top10.map(([name]) => name.length > 42 ? name.slice(0, 39) + '…' : name);
+      const x = top10.map(([, value]) => value);
+      const colors = buildGradientColors(top10.length, '#2563eb', '#0891b2');
+
+      const data = [{
+        type: 'bar',
+        orientation: 'h',
+        x,
+        y,
+        marker: { color: colors, line: { width: 0 } },
+        hovertemplate: '<b>%{y}</b><br>Sales: %{x:$,.0f}<extra></extra>'
+      }];
+
+      const layout = getBaseLayout({
+        margin: { l: 160, r: 18, t: 12, b: 30 },
+        xaxis: {
+          showgrid: true,
+          gridcolor: '#e2e8f0',
+          zeroline: false,
+          tickprefix: '$',
+          separatethousands: true,
+          tickfont: { color: '#475569' }
+        },
+        yaxis: {
+          showgrid: false,
+          autorange: 'reversed',
+          tickfont: { color: '#334155', size: 11 }
+        },
+        showlegend: false
+      });
+
+      Plotly.newPlot('productChart', data, layout, plotConfig);
+    }
+
+    function renderShipModeCharts(rows) {
+      const shipModes = Array.from(new Set(rows.map(r => r.shipMode))).sort((a, b) => a.localeCompare(b));
+      const colorBank = ['#2563eb', '#0891b2', '#059669', '#d97706', '#7c3aed', '#e11d48'];
+      const modeColors = shipModes.reduce((acc, mode, idx) => {
+        acc[mode] = colorBank[idx % colorBank.length];
+        return acc;
+      }, {});
+      const labels = shipModes;
+      const colors = labels.map(label => modeColors[label]);
+
+      const profitMap = sumBy(rows, row => row.shipMode, row => row.profit);
+      const volumeMap = sumBy(rows, row => row.shipMode, row => row.quantity);
+      const orderCountMap = uniqueCountByGroup(rows, row => row.shipMode, row => row.orderId);
+
+      const donut = (id, valueMap, valueLabel) => {
+        const values = labels.map(label => valueMap.get(label) || 0);
+        const data = [{
+          type: 'pie',
+          labels,
+          values,
+          hole: 0.58,
+          sort: false,
+          marker: { colors, line: { color: '#ffffff', width: 2 } },
+          textinfo: 'percent',
+          textposition: 'inside',
+          insidetextfont: { color: '#ffffff', family: 'Poppins, sans-serif', size: 12 },
+          hovertemplate: `<b>%{label}</b><br>${valueLabel}: %{value:,.0f}<br>Share: %{percent}<extra></extra>`
+        }];
+        const layout = getBaseLayout({
+          showlegend: true,
+          legend: {
+            orientation: 'h',
+            x: 0,
+            y: -0.08,
+            bgcolor: 'rgba(0,0,0,0)',
+            font: { family: 'Poppins, sans-serif', size: 11 }
+          },
+          margin: { l: 10, r: 10, t: 10, b: 44 }
+        });
+        Plotly.newPlot(id, data, layout, plotConfig);
+      };
+
+      donut('shipProfitChart', profitMap, 'Profit');
+      donut('shipVolumeChart', volumeMap, 'Volume');
+      donut('shipOrderChart', orderCountMap, 'Orders');
+    }
+
+    window.addEventListener('resize', () => {
+      if (!currentRows.length) return;
+      [
+        'trendChart',
+        'segmentChart',
+        'mapChart',
+        'productChart',
+        'shipProfitChart',
+        'shipVolumeChart',
+        'shipOrderChart'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) Plotly.Plots.resize(el);
+      });
+    });
+  </script>
+</body>
+</html>
